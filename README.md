@@ -7,7 +7,7 @@ produces different binary output on Windows vs Linux for identical input data.
 
 ```bash
 pixi install
-pixi run reproduce   # create → index → check
+pixi run -e default reproduce   # create → index → check
 ```
 
 Run on both Windows and Linux. If the R-tree MD5 differs, the bug is confirmed.
@@ -70,20 +70,24 @@ insertion via SQLite's virtual table mechanism, which is deterministic.
 ```bash
 pixi install
 
-# All-in-one:
-pixi run reproduce
+# All-in-one (GDAL ≥ 3.8, affected):
+pixi run -e default reproduce
 
 # Or step by step:
-pixi run create      # → test.gpkg (200 points, no spatial index)
-pixi run index       # → test_indexed.gpkg (spatial index added)
-pixi run check       # → prints R-tree MD5 hash
+pixi run -e default create      # → test.gpkg (200 points, no spatial index)
+pixi run -e default index       # → test_indexed.gpkg (spatial index added)
+pixi run -e default check       # → prints R-tree MD5 hash
 
-# Bonus: verify the base file (without index) is identical cross-platform
-pixi run check-gpkg  # → prints whole-file MD5 of test.gpkg
+# Verify the base file (without index) is identical cross-platform:
+pixi run -e default check-gpkg  # → prints whole-file MD5 of test.gpkg
+
+# Compare with GDAL 3.7 (unaffected, row-by-row R-tree insertion):
+pixi run -e gdal37 reproduce
 ```
 
-Run on both Windows and Linux/WSL. The R-tree hash from `pixi run check` will
-differ across platforms; the whole-file hash from `pixi run check-gpkg` will match.
+Run on both Windows and Linux/WSL. The R-tree hash from `check` will
+differ across platforms in the default environment; the whole-file hash from
+`check-gpkg` will match. With the `gdal37` environment, everything matches.
 
 ## What was tried
 
@@ -95,6 +99,32 @@ differ across platforms; the whole-file hash from `pixi run check-gpkg` will mat
   With this set, the file *without* spatial index is byte-identical cross-platform.
 - `SPATIAL_INDEX=NO` + `OGR_CURRENT_DATE`: Produces identical files. This
   confirms the R-tree is the only remaining source of non-determinism.
+
+## Cross-platform results
+
+### GDAL 3.13 (affected — bulk R-tree loader)
+
+| File | Windows | Linux (WSL) | Match? |
+|------|---------|-------------|--------|
+| test.gpkg (no index) | `47a3c841862471f3d8be801efa7a9937` | `47a3c841862471f3d8be801efa7a9937` | ✅ |
+| R-tree nodes | `4473809c35ae48ef910e6decd20c3376` | `1595194743a5d67bb7b4ffc6e3559af7` | ❌ |
+
+### GDAL 3.7 (unaffected — row-by-row R-tree insertion)
+
+| File | Windows | Linux (WSL) | Match? |
+|------|---------|-------------|--------|
+| test.gpkg (no index) | `c3082c15417e6525d5b45e8ebded9fae` | `c3082c15417e6525d5b45e8ebded9fae` | ✅ |
+| R-tree nodes | `1c4882d44c47fd1986e777608a758b12` | `1c4882d44c47fd1986e777608a758b12` | ✅ |
+
+Test with GDAL 3.7 yourself: `pixi run -e gdal37 reproduce`
+
+This confirms:
+- The base GeoPackage (without spatial index) is byte-identical on all platforms
+  and GDAL versions (when `OGR_CURRENT_DATE` is fixed).
+- The 32-bit float R-tree coordinates are identical across platforms — only the
+  *ordering* within nodes differs.
+- GDAL 3.7's row-by-row R-tree insertion was fully deterministic.
+- The regression was introduced in GDAL 3.8.0 with the bulk R-tree loader.
 
 ## Impact
 

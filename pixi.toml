@@ -15,3 +15,17 @@ reproduce = { depends-on = ["create", "index", "check"] }
 [dependencies]
 python = ">=3.12"
 gdal = ">=3.8.0,<4"
+
+[feature.gdal37.dependencies]
+gdal = ">=3.7,<3.8"
+python = ">=3.11"
+
+[feature.gdal37.tasks]
+create = "python create_gpkg.py"
+index = { cmd = "python create_index.py", depends-on = ["create"] }
+check = { cmd = "python check_rtree.py", depends-on = ["index"] }
+check-gpkg = { cmd = "python check_gpkg.py", depends-on = ["create"] }
+reproduce = { depends-on = ["create", "index", "check"] }
+
+[environments]
+gdal37 = { features = ["gdal37"], no-default-feature = true }
