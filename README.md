@@ -108,6 +108,10 @@ Use `std::stable_sort` instead of `std::sort` in `node_split_rstartree`, or add
 a tiebreaker to the comparator (e.g. the original array index `a.i < b.i`) so
 that equal elements have a deterministic order regardless of the sort algorithm.
 
+The tiebreaker approach is preferred: zero extra memory, same algorithm, and it
+makes the intent explicit. Performance is not a concern — the sort operates on a
+single overflowing node (≤51 elements), so the difference is nanoseconds.
+
 ## Workarounds
 
 1. **Strip the spatial index** from canonical/checked-in files and recreate it
