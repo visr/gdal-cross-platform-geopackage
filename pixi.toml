@@ -1,0 +1,17 @@
+[workspace]
+authors = ["Martijn Visser <mgvisser@gmail.com>"]
+channels = ["conda-forge"]
+name = "gpkg-rtree-reproducer"
+platforms = ["win-64", "linux-64", "osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+create = "python create_gpkg.py"
+index = { cmd = "python create_index.py", depends-on = ["create"] }
+check = { cmd = "python check_rtree.py", depends-on = ["index"] }
+check-gpkg = { cmd = "python check_gpkg.py", depends-on = ["create"] }
+reproduce = { depends-on = ["create", "index", "check"] }
+
+[dependencies]
+python = ">=3.12"
+gdal = ">=3.8.0,<4"
