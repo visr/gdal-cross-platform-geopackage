@@ -3,7 +3,7 @@
 Minimal reproducer showing that GDAL's GeoPackage spatial index creation
 produces different binary output on Windows vs Linux for identical input data.
 
-Reported in https://github.com/OSGeo/gdal/issues/14685, fixed in https://github.com/OSGeo/gdal/pull/14687, which is likely available from GDAL 3.13.1.
+Reported in https://github.com/OSGeo/gdal/issues/14685, fixed in https://github.com/OSGeo/gdal/pull/14687, which is available from GDAL 3.13.1.
 
 ## Quick start
 
